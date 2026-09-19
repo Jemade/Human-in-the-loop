@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: approvalflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: approvalflow
+      POSTGRES_PASSWORD: approvalflow_secret
+      POSTGRES_DB: approvalflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U approvalflow -d approvalflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: approvalflow-agent
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://approvalflow:approvalflow_secret@db:5432/approvalflow
+      API_KEY: test-admin-secret-key
+      REQUIRE_AUTH: "false"
+      EMAIL_PROVIDER: sandbox
+      LLM_PROVIDER: heuristic
+      DEBUG: "true"
+
+volumes:
+  postgres_data:

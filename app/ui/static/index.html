@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApprovalFlow Agent | Human-in-the-Loop AI</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-group">
+        <div class="logo-icon">AF</div>
+        <div class="logo-text">
+          <h1>ApprovalFlow Agent</h1>
+          <p>Human-in-the-Loop Autonomous AI Workflow System</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="status-pill">
+          <span class="pulse-dot"></span>
+          <span id="system-status">System Online</span>
+        </div>
+        <button class="btn btn-secondary" id="refresh-btn" title="Refresh all data">
+          🔄 Refresh
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- New Workflow Trigger Card -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2>⚡ Trigger New Agent Workflow</h2>
+      </div>
+      <form id="create-workflow-form">
+        <div class="form-group">
+          <label for="workflow-task">Task Description</label>
+          <input 
+            type="text" 
+            id="workflow-task" 
+            placeholder="e.g. Research Acme Corp and prepare an outreach email." 
+            value="Research Acme Corp and prepare an outreach email."
+            required
+          >
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button type="submit" class="btn btn-primary" id="start-workflow-btn">
+            🚀 Launch Workflow
+          </button>
+          <span id="workflow-loading-indicator" style="display:none; color: var(--text-secondary); font-size: 0.85rem;">
+            ⏳ Agent is planning, researching, and drafting...
+          </span>
+        </div>
+      </form>
+    </section>
+
+    <!-- Priority Section: Pending Human Approvals -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2>
+          🛡️ Pending Approvals 
+          <span class="counter-badge" id="approvals-count">0</span>
+        </h2>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">
+          Consequential actions are paused at the approval gate
+        </span>
+      </div>
+
+      <div class="approvals-grid" id="approvals-list">
+        <!-- Rendered dynamically -->
+        <div class="empty-state">
+          <div class="empty-state-icon">✅</div>
+          <p>No pending approvals. Launch a workflow above to see the agent trigger an approval gate.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- System Observation & Tabs -->
+    <section class="section-card">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-workflows">📋 All Workflows</button>
+        <button class="tab-btn" data-tab="tab-audit">📜 System Audit Trail</button>
+        <button class="tab-btn" data-tab="tab-outbox">📬 Sandbox Outbox</button>
+      </div>
+
+      <!-- Tab: All Workflows -->
+      <div class="tab-content active" id="tab-workflows">
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Workflow ID</th>
+                <th>Task</th>
+                <th>Current State</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="workflows-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Audit Trail -->
+      <div class="tab-content" id="tab-audit">
+        <div class="timeline" id="audit-timeline">
+          <!-- Rendered dynamically -->
+          <div class="empty-state">
+            <p>Select a workflow or launch one to view audit logs.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Sandbox Outbox -->
+      <div class="tab-content" id="tab-outbox">
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sent Time</th>
+                <th>Recipient</th>
+                <th>Subject</th>
+                <th>Idempotency Key</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="outbox-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Edit Action Modal -->
+  <dialog id="edit-dialog">
+    <div class="modal-header">
+      <h3>✏️ Edit Proposed Action</h3>
+      <button class="close-btn" id="close-edit-dialog">&times;</button>
+    </div>
+    <form id="edit-form">
+      <input type="hidden" id="edit-approval-id">
+      
+      <div class="form-group">
+        <label for="edit-recipient">Recipient Email</label>
+        <input type="email" id="edit-recipient" required>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-subject">Subject Line</label>
+        <input type="text" id="edit-subject" required>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-body">Email Body Content</label>
+        <textarea id="edit-body" rows="8" required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-reason">Reason for Edit (Audit Record)</label>
+        <input type="text" id="edit-reason" placeholder="e.g. Refined value proposition and adjusted greeting">
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="save-edit-btn">Save & Approve</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Reject Action Modal -->
+  <dialog id="reject-dialog">
+    <div class="modal-header">
+      <h3>🚫 Reject Proposed Action</h3>
+      <button class="close-btn" id="close-reject-dialog">&times;</button>
+    </div>
+    <form id="reject-form">
+      <input type="hidden" id="reject-approval-id">
+      
+      <div class="form-group">
+        <label for="reject-reason">Mandatory Rejection Reason</label>
+        <textarea 
+          id="reject-reason" 
+          placeholder="State why this outreach is rejected (e.g. Outreach angle misaligned with current corporate policy)." 
+          required
+        ></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancel-reject-btn">Cancel</button>
+        <button type="submit" class="btn btn-danger" id="confirm-reject-btn">Reject Workflow</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Script -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
