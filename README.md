@@ -48,3 +48,9 @@ The Compose configuration is a development setup. Review its authentication and 
 ## Current scope
 
 Approval controls govern registered actions in this application. They do not independently verify the factual accuracy of a model-generated draft or research result.
+
+## Engineering and contribution guide
+
+Read the [engineering notes](docs/ENGINEERING.md) for implementation boundaries and verification commands, the [review checklist](docs/REVIEW_CHECKLIST.md) for evidence still required, and [CONTRIBUTING.md](CONTRIBUTING.md) to propose changes. Report vulnerabilities through [SECURITY.md](SECURITY.md).
+
+[![Repository hygiene](https://github.com/Jemade/Human-in-the-loop/actions/workflows/repository-hygiene.yml/badge.svg)](https://github.com/Jemade/Human-in-the-loop/actions/workflows/repository-hygiene.yml)
